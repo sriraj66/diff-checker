@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Diff Checker</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <!-- Custom Styles -->
+    <style>
+        :root {
+            --primary-color: #1b1b1b;
+            --success-color: #16a34a;
+            --danger-color: #dc2626;
+            --warning-color: #ca8a04;
+            --light-bg: #f8fafc;
+            --dark-text: #1e293b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--light-bg);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+
+        .main-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), #3b82f6);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            margin: 0.5rem 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .content-section {
+            padding: 2rem;
+        }
+
+        .textarea-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .textarea-label {
+            font-weight: 600;
+            color: var(--dark-text);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .textarea-custom {
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1rem;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            resize: vertical;
+            transition: all 0.3s ease;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 800px;
+        }
+
+        .textarea-custom:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            outline: none;
+        }
+
+        .btn-custom {
+            border-radius: 10px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary-custom {
+            background: linear-gradient(135deg, var(--primary-color), #3b82f6);
+            color: white;
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-secondary-custom {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary-custom:hover {
+            background: #4b5563;
+            transform: translateY(-2px);
+        }
+
+        .btn-success-custom {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-success-custom:hover {
+            background: #15803d;
+            transform: translateY(-2px);
+        }
+
+        .copy-btn {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.85rem;
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+
+        .copy-btn:hover {
+            background: #e2e8f0;
+            color: #334155;
+        }
+
+        .diff-container {
+            margin-top: 2rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            min-height: 200px;
+            background: #fafbfc;
+        }
+
+        .diff-header {
+            background: #f8fafc;
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .diff-content {
+            padding: 1.5rem;
+            overflow: auto;
+            scroll-behavior: smooth;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 800px;
+        }
+
+        .diff-insertion {
+            background-color: #dcfce7;
+            color: #166534;
+            padding: 2px 4px;
+            border-radius: 4px;
+            margin: 0 1px;
+        }
+
+        .diff-deletion {
+            background-color: #fef2f2;
+            color: #dc2626;
+            padding: 2px 4px;
+            border-radius: 4px;
+            margin: 0 1px;
+            text-decoration: line-through;
+        }
+
+        .diff-unchanged {
+            color: #6b7280;
+        }
+
+        .side-by-side {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .side-by-side .diff-column {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .side-by-side .diff-column-header {
+            background: #f8fafc;
+            padding: 0.75rem;
+            font-weight: 600;
+            text-align: center;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .diff-column-header{
+            text-align: center !important;
+        }
+
+        .side-by-side .diff-column-content {
+            padding: 1rem;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            min-height: 200px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .view-toggle {
+            display: flex;
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 0.25rem;
+            margin-left: auto;
+        }
+
+        .view-toggle button {
+            padding: 0.5rem 1rem;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .view-toggle button.active {
+            background: white;
+            color: var(--primary-color);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .footer {
+            background: #1e293b;
+            color: #cbd5e1;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+        }
+
+        .footer p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        .footer a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            color: #93c5fd;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .view-toggle {
+                margin-left: 0;
+                margin-top: 1rem;
+            }
+            
+            .side-by-side {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="bi bi-file-diff"></i> Text Diff Checker</h1>
+            <p>Compare two texts and visualize the differences</p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content-section">
+            <!-- Text Input Areas -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="textarea-container">
+                        <div class="textarea-label">
+                            <span><i class="bi bi-file-text"></i> Text A</span>
+                            <button class="btn copy-btn" onclick="copyText('textA')" title="Copy to clipboard">
+                                <i class="bi bi-clipboard"></i> Copy
+                            </button>
+                        </div>
+                        <textarea 
+                            id="textA" 
+                            class="form-control textarea-custom" 
+                            rows="10" 
+                            placeholder="Enter your first text here..."
+                            wrap="soft"
+                        ></textarea>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="textarea-container">
+                        <div class="textarea-label">
+                            <span><i class="bi bi-file-text"></i> Text B</span>
+                            <button class="btn copy-btn" onclick="copyText('textB')" title="Copy to clipboard">
+                                <i class="bi bi-clipboard"></i> Copy
+                            </button>
+                        </div>
+                        <textarea 
+                            id="textB" 
+                            class="form-control textarea-custom" 
+                            rows="10" 
+                            placeholder="Enter your second text here..."
+                            wrap="soft"
+                        ></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls">
+                <button class="btn btn-primary-custom btn-custom" onclick="compareDiff()">
+                    <i class="bi bi-search"></i> Compare Texts
+                </button>
+                <button class="btn btn-secondary-custom btn-custom" onclick="clearAll()">
+                    <i class="bi bi-trash"></i> Clear All
+                </button>
+                <div class="view-toggle">
+                    <button id="inlineBtn" class="active" onclick="switchView('inline')">
+                        <i class="bi bi-list"></i> Inline
+                    </button>
+                    <button id="sideBtn" onclick="switchView('side')">
+                        <i class="bi bi-columns"></i> Side-by-side
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div class="loading" id="loadingIndicator">
+                <div class="spinner"></div>
+                <p>Processing diff...</p>
+            </div>
+
+            <!-- Diff Results -->
+            <div class="diff-container" id="diffContainer" style="display: none;">
+                <div class="diff-header">
+                    <h5 class="mb-0"><i class="bi bi-graph-up"></i> Comparison Results</h5>
+                    <small class="text-muted" id="diffStats"></small>
+                </div>
+                <div class="diff-content" id="diffContent"></div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>&copy; <a href="https://sriraj66.github.io" target="_blank">sriraj66.github.io</a> | Author: Sriram Rajagopalan</p>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toastNotification">
+        <div class="toast-content bg-success text-white p-3 rounded">
+            <i class="bi bi-check-circle"></i> <span id="toastMessage">Success!</span>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Diff Match Patch Library -->
+    <script src="https://cdn.jsdelivr.net/npm/diff-match-patch@1.0.5/index.js"></script>
+    
+    <!-- Main Application Script -->
+    <script>
+        // Initialize diff match patch
+        const dmp = new diff_match_patch();
+        let currentView = 'inline';
+
+        // Copy text to clipboard
+        function copyText(textareaId) {
+            const textarea = document.getElementById(textareaId);
+            textarea.select();
+            textarea.setSelectionRange(0, 99999); // For mobile devices
+            
+            try {
+                document.execCommand('copy');
+                showToast('Text copied to clipboard!');
+            } catch (err) {
+                // Fallback for modern browsers
+                navigator.clipboard.writeText(textarea.value).then(() => {
+                    showToast('Text copied to clipboard!');
+                }).catch(() => {
+                    showToast('Failed to copy text', 'error');
+                });
+            }
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toastNotification');
+            const toastContent = toast.querySelector('.toast-content');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            toastMessage.textContent = message;
+            
+            if (type === 'error') {
+                toastContent.className = 'toast-content bg-danger text-white p-3 rounded';
+            } else {
+                toastContent.className = 'toast-content bg-success text-white p-3 rounded';
+            }
+            
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Clear all text areas and results
+        function clearAll() {
+            if (confirm('Are you sure you want to clear all text and results?')) {
+                document.getElementById('textA').value = '';
+                document.getElementById('textB').value = '';
+                document.getElementById('diffContainer').style.display = 'none';
+                showToast('All content cleared!');
+            }
+        }
+
+        // Switch between inline and side-by-side view
+        function switchView(view) {
+            currentView = view;
+            
+            document.getElementById('inlineBtn').classList.toggle('active', view === 'inline');
+            document.getElementById('sideBtn').classList.toggle('active', view === 'side');
+            
+            // Re-render diff if it exists
+            const diffContainer = document.getElementById('diffContainer');
+            if (diffContainer.style.display !== 'none') {
+                compareDiff();
+            }
+        }
+
+        // Main diff comparison function
+        function compareDiff() {
+            const textA = document.getElementById('textA').value;
+            const textB = document.getElementById('textB').value;
+            
+            if (!textA.trim() && !textB.trim()) {
+                showToast('Please enter text in both areas to compare', 'error');
+                return;
+            }
+            
+            // Show loading indicator
+            document.getElementById('loadingIndicator').style.display = 'block';
+            document.getElementById('diffContainer').style.display = 'none';
+            
+            // Use setTimeout to allow UI to update
+            setTimeout(() => {
+                try {
+                    // Compute diff
+                    const diffs = dmp.diff_main(textA, textB);
+                    dmp.diff_cleanupSemantic(diffs);
+                    
+                    // Display results
+                    displayDiff(diffs);
+                    
+                    // Calculate statistics
+                    const stats = calculateStats(diffs);
+                    document.getElementById('diffStats').textContent = stats;
+                    
+                    // Hide loading and show results
+                    document.getElementById('loadingIndicator').style.display = 'none';
+                    document.getElementById('diffContainer').style.display = 'block';
+                    
+                    showToast('Comparison completed!');
+                    
+                } catch (error) {
+                    console.error('Diff error:', error);
+                    document.getElementById('loadingIndicator').style.display = 'none';
+                    showToast('Error processing diff', 'error');
+                }
+            }, 100);
+        }
+
+        // Display diff results
+        function displayDiff(diffs) {
+            const diffContent = document.getElementById('diffContent');
+            
+            if (currentView === 'inline') {
+                displayInlineDiff(diffs, diffContent);
+            } else {
+                displaySideBySideDiff(diffs, diffContent);
+            }
+        }
+
+        // Display inline diff
+        function displayInlineDiff(diffs, container) {
+            let html = '';
+            
+            diffs.forEach(diff => {
+                const [operation, text] = diff;
+                const escapedText = escapeHtml(text);
+                
+                switch (operation) {
+                    case 1: // DIFF_INSERT
+                        html += `<span class="diff-insertion">${escapedText}</span>`;
+                        break;
+                    case -1: // DIFF_DELETE
+                        html += `<span class="diff-deletion">${escapedText}</span>`;
+                        break;
+                    case 0: // DIFF_EQUAL
+                        html += `<span class="diff-unchanged">${escapedText}</span>`;
+                        break;
+                }
+            });
+            
+            container.innerHTML = html;
+            container.className = 'diff-content';
+        }
+
+        // Display side-by-side diff
+        function displaySideBySideDiff(diffs, container) {
+            let leftHtml = '';
+            let rightHtml = '';
+            
+            diffs.forEach(diff => {
+                const [operation, text] = diff;
+                const escapedText = escapeHtml(text);
+                
+                switch (operation) {
+                    case 1: // DIFF_INSERT
+                        rightHtml += `<span class="diff-insertion">${escapedText}</span>`;
+                        break;
+                    case -1: // DIFF_DELETE
+                        leftHtml += `<span class="diff-deletion">${escapedText}</span>`;
+                        break;
+                    case 0: // DIFF_EQUAL
+                        leftHtml += `<span class="diff-unchanged">${escapedText}</span>`;
+                        rightHtml += `<span class="diff-unchanged">${escapedText}</span>`;
+                        break;
+                }
+            });
+            
+            container.innerHTML = `
+                <div class="side-by-side">
+                    <div class="diff-column">
+                        <div class="diff-column-header text-center">
+                            <i class="bi bi-file-text"></i> Text A (Original)
+                        </div>
+                        <div class="diff-column-content">${leftHtml}</div>
+                    </div>
+                    <div class="diff-column">
+                        <div class="diff-column-header text-center">
+                            <i class="bi bi-file-text"></i> Text B (Modified)
+                        </div>
+                        <div class="diff-column-content">${rightHtml}</div>
+                    </div>
+                </div>
+            `;
+            container.className = 'diff-content';
+        }
+
+        // Calculate diff statistics
+        function calculateStats(diffs) {
+            let insertions = 0;
+            let deletions = 0;
+            let unchanged = 0;
+            
+            diffs.forEach(diff => {
+                const [operation, text] = diff;
+                const length = text.length;
+                
+                switch (operation) {
+                    case 1: // DIFF_INSERT
+                        insertions += length;
+                        break;
+                    case -1: // DIFF_DELETE
+                        deletions += length;
+                        break;
+                    case 0: // DIFF_EQUAL
+                        unchanged += length;
+                        break;
+                }
+            });
+            
+            return `+${insertions} insertions, -${deletions} deletions, ${unchanged} unchanged`;
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key) {
+                    case 'Enter':
+                        e.preventDefault();
+                        compareDiff();
+                        break;
+                    case 'r':
+                        e.preventDefault();
+                        clearAll();
+                        break;
+                }
+            }
+        });
+
+        // Auto-resize textareas
+        document.addEventListener('DOMContentLoaded', () => {
+            const textareas = document.querySelectorAll('.textarea-custom');
+            textareas.forEach(textarea => {
+                textarea.addEventListener('input', () => {
+                    textarea.style.height = 'auto';
+                    textarea.style.height = Math.max(textarea.scrollHeight, 200) + 'px';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
